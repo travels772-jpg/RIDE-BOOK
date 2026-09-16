@@ -1,0 +1,142 @@
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'camera_live_stream_screen.dart'; // ডুয়াল ক্যামেরা ও লাইভ ভিডিও স্ক্রিন
+
+class PassengerSosService {
+  // ১. প্যাসেঞ্জার SOS চাপলে ১ কিমি রেঞ্জের সবাইকে অ্যালার্ট পাঠানো এবং ভিডিও অন করা
+  static Future<void> triggerPassengerEmergencySos({
+    required double currentLat,
+    required double currentLng,
+    required String passengerName,
+    required String passengerPhone,
+  }) async {
+    try {
+      // বর্তমান লোকেশন পিন পয়েন্ট করা
+      print("SOS Triggered by Passenger: $passengerName at Lat: $currentLat, Lng: $currentLng");
+
+      // ১ কিলোমিটারের ভেতরের টোটোওয়ালা ও প্যাসেঞ্জারদের ব্যাকএন্ডে ব্রডকাস্ট পাঠানো
+      // (এখানে ফায়ারবেস ক্লাউড মেসেজিং / WebSocket বা API কল হবে)
+      await _broadcastToNearbyUsers(currentLat, currentLng, passengerPhone);
+
+    } catch (e) {
+      print("SOS Error: $e");
+    }
+  }
+
+  // ফায়ারবেস বা সার্ভারের মাধ্যমে ১ কিমি রেঞ্জের মধ্যে নোটিফিকেশন ব্রডকাস্ট করার ফাংশন
+  static Future<void> _broadcastToNearbyUsers(double lat, double lng, String phone) async {
+    // লজিক: ১ কিমি রেডিয়াসের মধ্যে থাকা টোটো ড্রাইভার ও প্যাসেঞ্জারদের FCM টোকেন ফেচ করে নোটিফিকেশন পাঠানো
+    // এবং হোয়াটসঅ্যাপে লাইভ লোকেশন লিংক সহ ইমার্জেন্সি মেসেজ পাঠানো
+    String emergencyMessage = "জরুরি অ্যালার্ট! ১ কিলোমিটারের মধ্যে একজন প্যাসেঞ্জার বিপদে পড়েছেন (SOS)। লাইভ লোকেশন: https://maps.google.com/?q=$lat,$lng";
+    
+    // টেস্ট হিসেবে কন্ট্রোল রুম বা ড্রাইভারদের WhatsApp-এ ব্রডকাস্ট ট্রিগার
+    final url = "https://wa.me/919876543210?text=${Uri.encodeComponent(emergencyMessage)}";
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    }
+  }
+}
+
+// প্যাসেঞ্জার অ্যাপের SOS স্ক্রিন উইজেট
+class PassengerSosScreen extends StatefulWidget {
+  const PassengerSosScreen({Key? key}) : super(key: key);
+
+  @override
+  _PassengerSosScreenState createState() => _PassengerSosScreenState();
+}
+
+class _PassengerSosScreenState extends State<PassengerSosScreen> {
+  bool _isSosActive = false;
+
+  void _handleSosButtonPress() async {
+    setState(() {
+      _isSosActive = true;
+    });
+
+    // জিপিএস লোকেশন নেওয়া
+    Position position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+    // SOS সার্ভিস কল করা
+    await PassengerSosService.triggerPassengerEmergencySos(
+      currentLat: position.latitude,
+      currentLng: position.longitude,
+      passengerName: "সোনু মন্ডল", // উদাহরণস্বরূপ
+      passengerPhone: "9876543210",
+    );
+
+    if (!mounted) return;
+
+    // সরাসরি ডুয়াল ক্যামেরা লাইভ ভিডিও এবং ম্যাপ স্ক্রিনে চলে যাওয়া
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LiveCameraAndMapTrackingScreen(
+          latitude: position.latitude,
+          longitude: position.longitude,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      app: AppBar(
+        title: const Text("ইমার্জেন্সি SOS কন্ট্রোল"),
+        backgroundColor: Colors.red[900],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "বিপদে পড়লে নিচের লাল বোতামটি চাপুন!\n১ কিমি রেঞ্জের সমস্ত টোটোওয়ালা ও ইউজারের ফোনে অ্যালার্ট ও লাইভ ভিডিও চলে যাবে।",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const SizedBox(height: 40),
+              
+              // বড় SOS ইমার্জেন্সি বাটন
+              GestureDetector(
+                onTap: _handleSosButtonPress,
+                child: Container(
+                  height: 180,
+                  width: 180,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.red,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.redAccent.withOpacity(0.6),
+                        blurRadius: 20,
+                        spreadRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      "SOS\nEMERGENCY",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

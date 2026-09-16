@@ -1,7 +1,6 @@
 name: ride_book
-description: "A new Flutter project for ride booking."
+description: "A new Flutter project."
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
@@ -13,7 +12,11 @@ dependencies:
   image_picker: ^1.0.7
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.0
+  google_maps_flutter: ^2.5.3
+  shared_preferences: ^2.2.2
   cupertino_icons: ^1.0.8
+  flutter_blue_plus: ^1.31.6
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

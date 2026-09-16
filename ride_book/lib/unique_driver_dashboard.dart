@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// আপনার প্রজেক্টের কনস্ট্যান্ট কালার ফাইলটি এখানে ইমপোর্ট করে নেবেন, যেমন:
-// import 'package:your_project/constants/colors.dart';
+// আপনার প্রজেক্টের কনস্ট্যান্ট ফাইল পাথ অনুযায়ী এটি প্রয়োজনমতো ঠিক করে নেবেন:
+// import 'constants.dart'; 
 
 class UniqueDriverDashboard extends StatefulWidget {
   const UniqueDriverDashboard({Key? key}) : super(key: key);
@@ -17,8 +17,8 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // আপনার প্রজেক্টের কনস্ট্যান্ট কালার ব্যবহার করা হলো
-      backgroundColor: AppColors.background, // আপনার কনস্ট্যান্ট কালার নাম অনুযায়ী বসাবেন
+      // আপনার প্রজেক্টের কনস্ট্যান্ট ব্যাকগ্রাউন্ড কালার
+      backgroundColor: Colors.black, // এখানে আপনার প্রজেক্টের AppColors.backgroundColor দিতে পারেন
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -26,7 +26,7 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               
-              // ১. কাস্টম অ্যাপ বার / হেডার অংশ
+              // ১. কাস্টম অ্যাপ বার / হেডার অংশ (নাম ও প্রোফাইল)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 child: Row(
@@ -41,24 +41,25 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          "ড্রাইভার ড্যাশবোর্ড",
+                          "সোনু মন্ডল", // আপনার নাম বা ড্রাইভার নাম
                           style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 22,
-                      backgroundColor: AppColors.cardBackground,
-                      child: const Icon(Icons.person, color: Colors.white),
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white),
                     ),
                   ],
                 ),
               ),
 
-              // ২. অ্যাডমিন কন্ট্রোলড ডায়নামিক ব্যানার (ঈদ, পূজো বা উৎসবের ছবি দেখানোর জন্য)
+              // ২. অ্যাডমিন কন্ট্রোলড ডায়নামিক ব্যানার (ঈদ, পূজো বা স্পেশাল নোটিশের ছবি)
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance.collection('settings').doc('admin_banner').snapshots(),
                 builder: (context, snapshot) {
+                  // ডিফল্ট একটি সুন্দর ফেস্টিভ বা স্টাইলিশ ব্যানার ইমেজ
                   String bannerUrl = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"; 
                   String bannerTitle = "শুভ টোটো সার্ভিস!";
 
@@ -113,11 +114,11 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
 
               const SizedBox(height: 10),
 
-              // ৩. ওয়ালেট ও আর্নিং কার্ড
+              // ৩. ফায়ারবেস থেকে লাইভ ব্যালেন্স ও ওয়ালেট কার্ড
               StreamBuilder<DocumentSnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('drivers')
-                    .doc(currentUser?.uid ?? 'test_id')
+                    .doc(currentUser?.uid ?? 'test_driver_id')
                     .snapshots(),
                 builder: (context, snapshot) {
                   double balance = 0.0;
@@ -130,7 +131,7 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.cardBackground, // আপনার কনস্ট্যান্ট কালার
+                      color: const Color(0xFF1E293B), // কার্ডের নিজস্ব প্রিমিয়াম কালার
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -141,14 +142,14 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "বর্তমান ব্যালেন্স",
+                              "বর্তমান ওয়ালেট ব্যালেন্স",
                               style: TextStyle(color: Colors.white70, fontSize: 14),
                             ),
                             const SizedBox(height: 6),
                             Text(
                               "₹ ${balance.toStringAsFixed(2)}",
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.greenAccent,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -157,15 +158,18 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
                         ),
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent, // আপনার কনস্ট্যান্ট কালার
+                            backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () {
-                            // রিচার্জ বা অ্যাড মানি অ্যাকশন
+                            // টাকা যোগ করার অপশন
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Add Money clicked")),
+                            );
                           },
                           icon: const Icon(Icons.add, size: 18),
-                          label: const Text("টাকা যোগ করুন"),
+                          label: const Text("টাকা যোগ"),
                         ),
                       ],
                     ),
@@ -175,9 +179,9 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
 
               const SizedBox(height: 24),
 
-              // ৪. শর্টকাট মেনু বা ফিচার কার্ডস
+              // ৪. কুইক সার্ভিসেস বা শর্টকাট বাটনস
               const Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: Text(
                   "কুইক সার্ভিসেস",
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
@@ -206,19 +210,19 @@ class _UniqueDriverDashboardState extends State<UniqueDriverDashboard> {
     );
   }
 
-  // ফিচার কার্ড উইজেট
+  // ছোট ফিচার কার্ড উইজেট বানানোর মেথড
   Widget _buildFeatureCard(IconData icon, String title) {
     return Container(
-      width: 80,
+      width: 85,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.cardBackground, // আপনার কনস্ট্যান্ট কালার
+        color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
       child: Column(
         children: [
-          Icon(icon, color: Colors.white70, size: 28),
+          Icon(icon, color: Colors.cyanAccent, size: 28),
           const SizedBox(height: 8),
           Text(
             title,

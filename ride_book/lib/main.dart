@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'constants/app_colors.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/progress_screen.dart';
+import 'screens/breakdown_screen.dart';
+import 'screens/parts_catalog_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,111 +16,98 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase initialization error: $e");
   }
-  runApp(const MyApp());
+
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  bool isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+  String? driverId = prefs.getString('driver_id');
+
+  runApp(TotoDriverApp(isLoggedIn: isLoggedIn, driverId: driverId));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TotoDriverApp extends StatelessWidget {
+  final bool isLoggedIn;
+  final String? driverId;
+
+  const TotoDriverApp({super.key, required this.isLoggedIn, this.driverId});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ride Book',
+      title: 'Toto Driver Pro',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.black,
-        primaryColor: const Color(0xFFFFC107),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFFC107),
-          secondary: Color(0xFFD32F2F),
-          surface: Colors.black,
-        ),
+        primarySwatch: Colors.teal,
+        scaffoldBackgroundColor: AppColors.darkBackground,
+        fontFamily: 'Roboto',
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const WelcomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
-        '/progress': (context) => const ProgressScreen(
-              name: 'User',
-              address: '',
-              idCardNumber: '',
-            ),
-      },
+      home: isLoggedIn 
+          ? MainNavigationWrapper(driverId: driverId) 
+          : const LoginScreen(),
     );
   }
 }
 
-// গ্রেডিয়েন্ট ওয়েলকাম স্ক্রিন
-class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+class MainNavigationWrapper extends StatefulWidget {
+  final String? driverId;
+  const MainNavigationWrapper({super.key, this.driverId});
+
+  @override
+  State<MainNavigationWrapper> createState() => _MainNavigationWrapperState();
+}
+
+class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
+  int _currentIndex = 0;
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      DashboardScreen(driverId: widget.driverId),
+      const ProgressScreen(),
+      const BreakdownScreen(),
+      const PartsCatalogScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFFFC107), // হলুদ
-              Color(0xFFD32F2F), // লাল
-              Color(0xFF388E3C), // সবুজ
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: _screens[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        backgroundColor: AppColors.cardBackground,
+        selectedItemColor: AppColors.primaryAccent,
+        unselectedItemColor: AppColors.textSecondary,
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: 'ড্যাশবোর্ড',
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    '🚗 Ride Booking App',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'আপনার নিরাপদ ভ্রমণ এখন হাতের মুঠোয়!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/login');
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFFD32F2F),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 35, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'শুরু করুন (Get Started)',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up),
+            label: 'প্রোগ্রেস',
           ),
-        ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.warning),
+            label: 'ব্রেকডাউন',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.build),
+            label: 'পার্টস',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'প্রোফাইল',
+          ),
+        ],
       ),
     );
   }
